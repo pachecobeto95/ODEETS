@@ -20,7 +20,7 @@ def extracting_ee_inference_data(args, test_loader, model, device):
 			data, target = data.to(device), target.to(device)
 
 			# Obtain confs and predictions for each side branch.
-			_, conf_branches, predictions_branches, delta_inf_time_branches, cum_inf_time_branches = model.forwardTraining(data)
+			_, conf_branches, predictions_branches, delta_inf_time_branches, cum_inf_time_branches = model.forwardExtractingInferenceData(data)
 
 			conf_list.append([conf_branch.item() for conf_branch in conf_branches]), delta_inf_time_list.append(delta_inf_time_branches)
 			cum_inf_time_list.append(cum_inf_time_branches)
@@ -77,7 +77,8 @@ def main(args):
 
 	df_inf_data = extracting_ee_inference_data(args, test_loader, ee_model, device)
 
-	sys.exit()
+	print(inf_data_path)
+
 	df_inf_data.to_csv(inf_data_path, mode='a', header=not os.path.exists(inf_data_path))
 
 
