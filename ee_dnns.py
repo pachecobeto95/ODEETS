@@ -17,7 +17,7 @@ from torchvision.prototype import models as PM
 def load_eednn_model(args, n_classes, model_path, device):
 
 	#Instantiate the Early-exit DNN model.
-	ee_model = ee_dnn.Early_Exit_DNN(args.model_name, n_classes, args.pretrained, args.n_branches, 
+	ee_model = Early_Exit_DNN(args.model_name, n_classes, args.pretrained, args.n_branches, 
 		args.dim, args.exit_type, device, args.distribution)
 
 	#Load the trained early-exit DNN model.
