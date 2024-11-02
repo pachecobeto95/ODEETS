@@ -14,6 +14,19 @@ from torch import Tensor
 from torchvision.prototype import models as PM
 
 
+def load_eednn_model(args, n_classes, model_path, device):
+
+	#Instantiate the Early-exit DNN model.
+	ee_model = ee_dnn.Early_Exit_DNN(args.model_name, n_classes, args.pretrained, args.n_branches, 
+		args.dim, args.exit_type, device, args.distribution)
+
+	#Load the trained early-exit DNN model.
+	ee_model.load_state_dict(torch.load(model_path, map_location=device)["model_state_dict"])
+	ee_model = ee_model.to(device)
+
+	return ee_model
+
+
 
 
 class EarlyExitBlock(nn.Module):
