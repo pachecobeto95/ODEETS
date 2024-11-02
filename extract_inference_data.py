@@ -1,4 +1,4 @@
-import config, ee_dnn
+import config, ee_dnns
 import argparse, logging, os, torch
 from tqdm import tqdm
 import numpy as np
