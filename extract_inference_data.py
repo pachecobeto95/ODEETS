@@ -55,7 +55,7 @@ def extracting_ee_inference_data(args, test_loader, model, device, distortion_le
 
 def main(args):
 
-	n_classes = config.n_class_dict[args.dataset_name]
+	n_classes = 257
 
 	print(args.use_gpu)
 	sys.exit()
