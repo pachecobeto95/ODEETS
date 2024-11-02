@@ -72,14 +72,13 @@ def main(args):
 	
 	ee_model = ee_dnns.load_eednn_model(args, n_classes, model_path, device)
 
-	sys.exit()
-
 	dataset_path = os.path.join("datasets", args.dataset_name)
 
 	_, _, test_loader = utils.load_caltech256(args, dataset_path, indices_path)
 
 	df_inf_data = extracting_ee_inference_data(args, test_loader, ee_model, device, distortion_level)
 
+	sys.exit()
 	df_inf_data.to_csv(inf_data_path, mode='a', header=not os.path.exists(inf_data_path))
 
 
