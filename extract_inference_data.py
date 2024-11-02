@@ -122,6 +122,9 @@ if (__name__ == "__main__"):
 	#This argument defines the ratio to split the Traning Set, Val Set, and Test Set.
 	parser.add_argument('--split_ratio', type=float, default=config.split_ratio, help='Split Ratio')
 
+	parser.add_argument('--batch_size_train', type=int, default=config.batch_size_train, 
+		help='Train Batch Size. Default: %s'%(config.batch_size_train))
+
 	args = parser.parse_args()
 
 	main(args)
