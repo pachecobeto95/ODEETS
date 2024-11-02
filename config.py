@@ -48,9 +48,9 @@ rotation_angle = 25
 brightness = (0.80, 1.20)
 
 
-root_dataset_path = os.path.join(DIR_NAME, "dataset")
-root_indices_path = os.path.join(DIR_NAME, "indices")
-resultsPath = os.path.join(DIR_NAME, "results")
+root_dataset_path = os.path.join(DIR_PATH, "dataset")
+root_indices_path = os.path.join(DIR_PATH, "indices")
+resultsPath = os.path.join(DIR_PATH, "results")
 
 dataset_path_dict = {"caltech256": os.path.join(root_dataset_path, "caltech256")}
 idx_path_dict = {"caltech256": os.path.join(root_indices_path, "caltech256")}
