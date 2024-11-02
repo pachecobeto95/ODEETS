@@ -1,11 +1,11 @@
-import config, utils, ee_dnn
+import config, ee_dnn
 import argparse, logging, os, torch
 from tqdm import tqdm
 import numpy as np
 import torch.optim as optim
 import torch.nn as nn
 import pandas as pd
-
+#import utils
 
 def extracting_ee_inference_data(args, test_loader, model, device, distortion_level):
 
