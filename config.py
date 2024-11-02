@@ -58,11 +58,6 @@ nr_class_dict = {"caltech256": {3: 258, 5: 258, 1: 257}}
 input_dim_dict = {3: [330, 300], 5: [256, 224], 1: [256, 224]}
 
 
-filePath_acc = os.path.join(resultsPath, "temp_scaling_accuracy.csv")
-filePath_inf_time = os.path.join(resultsPath, "temp_scaling_inference_time.csv")
-filePath_joint_opt = os.path.join(resultsPath, "temp_scaling_joint_optimization.csv")
-logFile = os.path.join(DIR_NAME, "logTestingJointOpt.log")
-
 
 DEBUG = True
 
