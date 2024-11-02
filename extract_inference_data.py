@@ -115,7 +115,7 @@ if (__name__ == "__main__"):
 
 	parser.add_argument('--use_gpu', type=bool, default=config.use_gpu, help='Use GPU? Default: %s'%(config.use_gpu))
 
-	parser.add_argument('--n_branches', type=int, help='Number of side branches.')
+	parser.add_argument('--n_branches', type=int, default=1, help='Number of side branches.')
 
 	parser.add_argument('--exit_type', type=str, default=config.exit_type, 
 		help='Exit Type. Default: %s'%(config.exit_type))

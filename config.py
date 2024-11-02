@@ -37,6 +37,7 @@ beta_start = 0
 beta_end = 200
 beta_step = 2
 max_patience = 50
+use_gpu = True
 
 # Parameters of Data Augmentation
 #To normalize the input images data, according to ImageNet dataset.
