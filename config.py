@@ -1,6 +1,6 @@
 import os, torch
 
-DIR_NAME = os.path.dirname(__file__)
+DIR_PATH = os.path.dirname(__file__)
 
 models_id_dict = {"mobilenet": 1, "resnet18": 2, "vgg16": 1, "resnet152": 4}
 
