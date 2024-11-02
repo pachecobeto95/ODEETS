@@ -117,9 +117,9 @@ if (__name__ == "__main__"):
 
 	parser.add_argument('--pretrained', type=bool, default=config.pretrained, help='Backbone DNN is pretrained.')
 
-	parser.add_argument('--model_id', type=int, help='Model_id.')
+	parser.add_argument('--model_id', type=int, default=3, help='Model_id.')
 
-	parser.add_argument('--loss_weights_type', type=str, help='loss_weights_type.')
+	parser.add_argument('--loss_weights_type', type=str, default="decrescent", help='loss_weights_type.')
 
 	#This argument defines the ratio to split the Traning Set, Val Set, and Test Set.
 	parser.add_argument('--split_ratio', type=float, default=config.split_ratio, help='Split Ratio')
