@@ -268,12 +268,12 @@ class Early_Exit_DNN(nn.Module):
 		self.softmax = nn.Softmax(dim=1)
 
 
-	def forwardTraining(self, x):
+	def forwardExtractingInferenceData(self, x):
 		"""
 		This method runs the DNN model during the training phase.
 		x (tensor): input image
 		"""
-
+		
 		output_list, conf_list, class_list, inf_time_list  = [], [], [], []
 		starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
 
