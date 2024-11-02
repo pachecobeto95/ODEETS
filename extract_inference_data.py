@@ -32,12 +32,10 @@ def extracting_ee_inference_data(args, test_loader, model, device, distortion_le
 	conf_list, correct_list, delta_inf_time_list = np.array(conf_list), np.array(correct_list), np.array(delta_inf_time_list)
 	cum_inf_time_list, prediction_list = np.array(cum_inf_time_list), np.array(prediction_list)
 
-	#accuracy_branches = [sum(correct_list[:, i])/len(correct_list[:, i]) for i in range(n_exits)]
+	accuracy_branches = [sum(correct_list[:, i])/len(correct_list[:, i]) for i in range(n_exits)]
 
-	#print("Accuracy: %s"%(accuracy_branches))
-	result_dict = {"distortion_type": len(target_list)*[args.distortion_type], 
-	"distortion_level": len(target_list)*[distortion_level],
-	"device": len(target_list)*[str(device)],
+	print("Accuracy: %s"%(accuracy_branches))
+	result_dict = {"device": len(target_list)*[str(device)],
 	"target": target_list}
 
 	for i in range(n_exits):
@@ -57,19 +55,16 @@ def main(args):
 
 	n_classes = 257
 
-	print(args.use_gpu)
-	sys.exit()
+	device_str = 'cuda' if (torch.cuda.is_available() and args.use_gpu) else 'cpu'
 
-	device = torch.device('cuda' if (torch.cuda.is_available() and args.use_gpu) else 'cpu')
+	device = torch.device(device_str)
 
-	models_dir_path = os.path.join(config.DIR_PATH, args.model_name, "models")
-
-	model_path = os.path.join(models_dir_path, "ee_model_%s_%s_branches_%s_id_%s.pth"%(args.model_name, 
+	model_path = os.path.join(config.DIR_PATH, args.model_name, "models", "ee_model_%s_%s_branches_%s_id_%s.pth"%(args.model_name, 
 		args.n_branches, args.loss_weights_type, args.model_id))
 
 	indices_path = os.path.join(config.DIR_PATH, "indices_%s.pt"%(args.dataset_name))
 
-	inf_data_dir_path = os.path.join(config.DIR_PATH, args.model_name, "inf_data")
+	inf_data_dir_path = os.path.join(config.DIR_PATH, args.model_name, "inference_data")
 	os.makedirs(inf_data_dir_path, exist_ok=True)
 
 	inf_data_path = os.path.join(inf_data_dir_path, "inf_data_ee_%s_%s_branches_%s_id_%s.csv"%(args.model_name, 
@@ -77,18 +72,15 @@ def main(args):
 	
 	ee_model = utils.load_eednn_model(args, n_classes, model_path, device)
 
-	distortion_level_list = config.distortion_level_dict[args.distortion_type]
+	sys.exit()
 
-	for distortion_level in distortion_level_list:
-		print("Distortion Type: %s, Distortion Level: %s"%(args.distortion_type, distortion_level))
+	dataset_path = os.path.join("datasets", args.dataset_name)
 
-		dist_dataset_path = os.path.join(config.distorted_dataset_path, args.distortion_type, str(distortion_level))
+	_, _, test_loader = utils.load_caltech256(args, dataset_path, indices_path)
 
-		_, _, test_loader = utils.load_caltech256(args, dist_dataset_path, indices_path)
+	df_inf_data = extracting_ee_inference_data(args, test_loader, ee_model, device, distortion_level)
 
-		df_inf_data = extracting_ee_inference_data(args, test_loader, ee_model, device, distortion_level)
-
-		df_inf_data.to_csv(inf_data_path, mode='a', header=not os.path.exists(inf_data_path))
+	df_inf_data.to_csv(inf_data_path, mode='a', header=not os.path.exists(inf_data_path))
 
 
 if (__name__ == "__main__"):
@@ -99,7 +91,7 @@ if (__name__ == "__main__"):
 	#The initial idea is this novel calibration method evaluates three dataset for image classification: cifar10, cifar100 and
 	#caltech256. First, we implement caltech256 dataset.
 	parser.add_argument('--dataset_name', type=str, default=config.dataset_name, 
-		choices=["caltech256", "cifar10"], help='Dataset name.')
+		choices=["caltech-256", "cifar10"], help='Dataset name.')
 
 	#We here insert the argument model_name. 
 	#We evalue our novel calibration method Offloading-driven Temperature Scaling in four early-exit DNN:
