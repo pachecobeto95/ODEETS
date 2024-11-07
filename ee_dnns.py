@@ -328,4 +328,38 @@ class Early_Exit_DNN(nn.Module):
 
 		return output_list, conf_list, class_list, inf_time_list, cumulative_inf_time_list
 
+  def forwardInference(self, x, threshold):
+    conf_list, infered_class_list = [], []
+
+    for i, exitBlock in enumerate(self.exits):
+      x = self.stages[i](x)
+
+      output_branch = exitBlock(x)
+      conf, infered_class = torch.max(self.softmax(output_branch), 1)
+
+      if(conf.item() >= threshold):
+        return output_branch, conf.item(), infered_class, True
+
+      else:
+
+        infered_class_list.append(infered_class), conf_list.append(conf.item())
+
+    x = self.stages[-1](x)
+    x = torch.flatten(x, 1)
+
+    output = self.classifier(x)
+
+    conf, infered_class = torch.max(self.softmax(output), 1)
+
+    if (conf.item() >= threshold):
+      return output, conf.item(), infered_class.item(), False
+
+    else:
+
+      # If any exit can reach the p_tar value, the output is give by the more confidence output.
+      # If evaluation, it returns max(output), max(conf) and the number of the early exit.
+
+      conf_list.append(conf.item()), infered_class_list.append(infered_class.item())
+      max_conf = np.argmax(conf_list)
+      return output, conf_list[max_conf], infered_class_list[max_conf], False
 
