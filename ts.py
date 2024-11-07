@@ -131,7 +131,7 @@ class GlobalTemperatureScaling(nn.Module):
 		self.after_ts_nll = nll_criterion(self.temperature_scale(logits), labels).item()
 		self.after_ts_ece = ece_criterion(self.temperature_scale(logits), labels).item()
 		print('Optimal temperature: %.3f' % self.temperature_overall.item())
-		print('After temperature - NLL: %.3f, ECE: %.3f' % (after_temperature_nll, after_temperature_ece))
+		print('After temperature - NLL: %.3f, ECE: %.3f' % (self.after_ts_nll, self.after_ts_ece))
 
 		#self.save_temperature(p_tar, before_temperature_nll, after_temperature_nll, before_temperature_ece, after_temperature_ece)
 		
