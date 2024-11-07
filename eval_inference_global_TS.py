@@ -34,10 +34,11 @@ def main(args):
 
 
 	threshold_list = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-	temp_init = 1.0
-	max_iter = 100
+	temp_init = 1.5
+	max_iter = 200
 
 	for threshold in threshold_list:
+		print("Threshold: %s"%(threshold))
 		global_ts_calib_model = ts.GlobalTemperatureScaling(ee_model, device, temp_init, max_iter, args.n_branches, threshold)
 		global_ts_calib_model.run(val_loader)
 
