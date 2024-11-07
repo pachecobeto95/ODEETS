@@ -39,7 +39,7 @@ def main(args):
 
 	for threshold in threshold_list:
 		global_ts_calib_model = ts.GlobalTemperatureScaling(ee_model, device, temp_init, max_iter, args.n_branches, threshold)
-		ts.run(val_loader)
+		global_ts_calib_model.run(val_loader)
 
 
 
