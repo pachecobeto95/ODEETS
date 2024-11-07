@@ -35,7 +35,7 @@ def main(args):
 
 	threshold_list = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 	temp_init = 1.0
-	max_iter = 500
+	max_iter = 1000
 
 	for threshold in threshold_list:
 		print("Threshold: %s"%(threshold))
