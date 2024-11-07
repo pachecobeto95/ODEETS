@@ -6,49 +6,6 @@ import torch.optim as optim
 import torch.nn as nn
 import pandas as pd
 
-def extracting_ee_inference_data(args, test_loader, model, device):
-
-	n_exits = args.n_branches + 1	
-	conf_list, correct_list, delta_inf_time_list, cum_inf_time_list = [], [], [], []
-	prediction_list, target_list = [], []
-
-	model.eval()
-	with torch.no_grad():
-		for (data, target) in tqdm(test_loader):	
-
-			# Convert data and target into the current device.
-			data, target = data.to(device), target.to(device)
-
-			# Obtain confs and predictions for each side branch.
-			_, conf_branches, predictions_branches, delta_inf_time_branches, cum_inf_time_branches = model.forwardExtractingInferenceData(data)
-
-			conf_list.append([conf_branch.item() for conf_branch in conf_branches]), delta_inf_time_list.append(delta_inf_time_branches)
-			cum_inf_time_list.append(cum_inf_time_branches)
-
-			correct_list.append([predictions_branches[i].eq(target.view_as(predictions_branches[i])).sum().item() for i in range(n_exits)])
-			target_list.append(target.item()), prediction_list.append([predictions_branches[i].item() for i in range(n_exits)])
-
-	conf_list, correct_list, delta_inf_time_list = np.array(conf_list), np.array(correct_list), np.array(delta_inf_time_list)
-	cum_inf_time_list, prediction_list = np.array(cum_inf_time_list), np.array(prediction_list)
-
-	accuracy_branches = [sum(correct_list[:, i])/len(correct_list[:, i]) for i in range(n_exits)]
-
-	print("Accuracy: %s"%(accuracy_branches))
-	result_dict = {"device": len(target_list)*[str(device)],
-	"target": target_list}
-
-	for i in range(n_exits):
-		result_dict["conf_branch_%s"%(i+1)] = conf_list[:, i]
-		result_dict["correct_branch_%s"%(i+1)] = correct_list[:, i]
-		result_dict["delta_inf_time_branch_%s"%(i+1)] = delta_inf_time_list[:, i]
-		result_dict["cum_inf_time_branch_%s"%(i+1)] = cum_inf_time_list[:, i]
-		result_dict["prediction_branch_%s"%(i+1)] = prediction_list[:, i]
-
-	#Converts to a DataFrame Format.
-	df = pd.DataFrame(np.array(list(result_dict.values())).T, columns=list(result_dict.keys()))
-
-	# Returns confidences and predictions into a DataFrame.
-	return df
 
 def main(args):
 
@@ -66,20 +23,26 @@ def main(args):
 	inf_data_dir_path = os.path.join(config.DIR_PATH, args.model_name, "inference_data")
 	os.makedirs(inf_data_dir_path, exist_ok=True)
 
-	inf_data_path = os.path.join(inf_data_dir_path, "inf_data_ee_%s_%s_branches_%s_id_%s.csv"%(args.model_name, 
+	inf_data_path = os.path.join(inf_data_dir_path, "global_TS_inf_data_ee_%s_%s_branches_%s_id_%s.csv"%(args.model_name, 
 		args.n_branches, args.loss_weights_type, args.model_id))
 	
 	ee_model = ee_dnns.load_eednn_model(args, n_classes, model_path, device)
 
 	dataset_path = os.path.join("datasets", args.dataset_name)
 
-	_, _, test_loader = utils.load_caltech256(args, dataset_path, indices_path)
+	_, val_loader, test_loader = utils.load_caltech256(args, dataset_path, indices_path)
 
-	df_inf_data = extracting_ee_inference_data(args, test_loader, ee_model, device)
 
-	#print(inf_data_path)
+	threshold_list = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+	temp_init = 2.0
+	max_iter = 100
 
-	df_inf_data.to_csv(inf_data_path, mode='a', header=not os.path.exists(inf_data_path))
+	for threshold in threshold_list:
+		global_ts_calib_model = ts.GlobalTemperatureScaling(ee_model, device, temp_init, max_iter, args.n_branches, threshold)
+		ts.run(val_loader)
+
+
+
 
 
 if (__name__ == "__main__"):

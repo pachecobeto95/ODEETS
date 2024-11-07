@@ -3,32 +3,6 @@ from torchvision import datasets, transforms
 import torch, os, sys, requests, cv2
 import numpy as np
 
-
-class ImageProcessor(object):
-	def __init__(self, distortion_type, distortion_lvl):
-		self.distortion_type = distortion_type
-		self.distortion_lvl = distortion_lvl
-
-	def blur(self):
-		self.dist_img = cv2.GaussianBlur(self.image, (4*self.distortion_lvl+1, 4*self.distortion_lvl+1), 
-			self.distortion_lvl)
-
-	def noise(self):
-		noise = np.random.normal(0, self.distortion_lvl, self.image.shape).astype(np.uint8)
-		self.dist_img = cv2.add(self.image, noise)
-
-	def distortion_not_found():
-		raise ValueError("Invalid distortion type. Please choose 'blur' or 'noise'.")
-
-	def apply(self, image_path):
-		self.image = cv2.imread(image_path)
-		dist_name = getattr(self, self.distortion_type, self.distortion_not_found)
-		dist_name()
-
-	def save_distorted_image(self, output_path):
-		cv2.imwrite(output_path, self.dist_img)
-
-
 def save_indices(train_idx, val_idx, test_idx, indices_path):
 
 	data_dict = {"train": train_idx, "val": val_idx, "test": test_idx}
@@ -102,3 +76,32 @@ def load_caltech256(args, dataset_path, indices_path):
 
 	return train_loader, val_loader, test_loader
 
+
+class ECE(nn.Module):
+	"""This method computes ECE metric to measure model's miscalibration"""
+
+	def __init__(self, n_bins=15):
+		"""
+		n_bins (int): number of confidence interval bins
+		"""
+		super(ECE, self).__init__()
+		bin_boundaries = torch.linspace(0, 1, n_bins + 1)
+		self.bin_lowers = bin_boundaries[:-1]
+		self.bin_uppers = bin_boundaries[1:]
+
+	def forward(self, logits, labels):
+		softmaxes = F.softmax(logits, dim=1)
+		confidences, predictions = torch.max(softmaxes, 1)
+		accuracies = predictions.eq(labels)
+
+		ece = torch.zeros(1, device=logits.device)
+		for bin_lower, bin_upper in zip(self.bin_lowers, self.bin_uppers):
+			# Calculated |confidence - accuracy| in each bin
+			in_bin = confidences.gt(bin_lower.item()) * confidences.le(bin_upper.item())
+			prop_in_bin = in_bin.float().mean()
+			if (prop_in_bin.item() > 0):
+				accuracy_in_bin = accuracies[in_bin].float().mean()
+				avg_confidence_in_bin = confidences[in_bin].mean()
+				ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
+
+		return ece
