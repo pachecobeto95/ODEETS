@@ -80,3 +80,6 @@ URL_CLOUD = "http://%s:%s"%(HOST_CLOUD, PORT_CLOUD)
 urlConfModelCloud = "%s/api/cloud/modelConfiguration"%(URL_CLOUD)
 
 
+threshold_list = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+overhead_list = [0, 1, 5, 10, 15, 20, 25, 30]
+
