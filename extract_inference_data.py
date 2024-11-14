@@ -66,8 +66,8 @@ def main(args):
 	inf_data_dir_path = os.path.join(config.DIR_PATH, args.model_name, "inference_data")
 	os.makedirs(inf_data_dir_path, exist_ok=True)
 
-	inf_data_path = os.path.join(inf_data_dir_path, "inf_data_ee_%s_%s_branches_%s_id_%s.csv"%(args.model_name, 
-		args.n_branches, args.loss_weights_type, args.model_id))
+	inf_data_path = os.path.join(inf_data_dir_path, "inf_data_ee_%s_%s_branches_%s_id_%s_%s.csv"%(args.model_name, 
+		args.n_branches, args.loss_weights_type, args.model_id, args.location))
 	
 	ee_model = ee_dnns.load_eednn_model(args, n_classes, model_path, device)
 
@@ -126,7 +126,8 @@ if (__name__ == "__main__"):
 	parser.add_argument('--batch_size_train', type=int, default=config.batch_size_train, 
 		help='Train Batch Size. Default: %s'%(config.batch_size_train))
 
-	parser.add_argument('--location', type=str, help='Which machine extracts the inference data', choices=["pechincha", "jetson", "RO"])
+	parser.add_argument('--location', type=str, help='Which machine extracts the inference data', choices=["pechincha", "jetson", "RO"],
+		default="RO")
 
 	args = parser.parse_args()
 

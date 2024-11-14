@@ -63,14 +63,8 @@ class GlobalTemperatureScaling(nn.Module):
 		temperature = self.temperature_overall.unsqueeze(1).expand(logits.size(0), logits.size(1))
 		return logits / temperature
 
-
-	def forwardCalibrationInference(self, x, threshold):
-		return self.model.forwardGlobalCalibrationInference(x, threshold, self.temperature_overall)
-
-
-	def forwardGlobalTS(self, x):
-		return self.model.forwardGlobalCalibration(x, self.temperature_overall)
-
+	def forwardGlobalTSInference(self, x, threshold):
+		return self.model.forwardGlobalCalibration(x, threshold, self.temperature_overall)
 
 	def get_temperature_data(self):
 		# This function probably should live outside of this class, but whatever
@@ -136,5 +130,108 @@ class GlobalTemperatureScaling(nn.Module):
 		#self.save_temperature(p_tar, before_temperature_nll, after_temperature_nll, before_temperature_ece, after_temperature_ece)
 		
 		#return self.temperature_overall
+		return self
+
+
+
+class PerBranchTemperatureScaling(nn.Module):
+
+	def __init__(self, model, device, n_branches, temp_init, max_iter, threshold, lr=0.01):
+		super(PerBranchTemperatureScaling, self).__init__()
+
+		self.model = model
+		self.device = device
+		self.n_exits = n_branches + 1
+		self.temperature_branches = [nn.Parameter((temp_init*torch.ones(1)).to(self.device)) for i in range(self.n_exits)]
+		self.lr = lr
+		self.max_iter = max_iter
+		self.temp_init = temp_init
+		self.threshold = threshold
+
+	def temperature_scale_branches(self, logits):
+		temperature = self.temperature_branch.unsqueeze(1).expand(logits.size(0), logits.size(1))
+		return logits / temperature
+
+	def forwardPerBranchTSInference(self, x, threshold):
+		return self.model.forwardPerBranchTSInference(x, threshold, self.temperature_branches)
+
+	def get_temperature_data(self):
+		# This function probably should live outside of this class, but whatever
+		# This method sves the learned temperature parameters.
+
+		result = {"threshold": round(self.threshold, 2)}
+
+		for i in range(int(self.n_exits)):
+			result.update({"before_nll_branch_%s"%(i+1): self.before_temp_nll_list[i], 
+				"before_ece_branch_%s"%(i+1): self.before_ece_list[i],
+				"after_nll_branch_%s"%(i+1): self.after_temp_nll_list[i],
+				"after_ece_branch_%s"%(i+1): self.after_ece_list[i],
+				"temperature_branch_%s"%(i+1): self.temperature_branches[i]})
+
+		return result
+
+	def run(self, valid_loader):
+
+		nll_criterion = nn.CrossEntropyLoss().to(self.device)
+		ece = ECE()
+
+		logits_list = [[] for i in range(self.n_exits)]
+		labels_list = [[] for i in range(self.n_exits)]
+		#idx_sample_exit_list = [[] for i in range(self.n_exits)]
+		self.before_temp_nll_list, self.after_temp_nll_list = [], []
+		self.before_ece_list, self.after_ece_list = [], []
+
+		self.model.eval()
+		with torch.no_grad():
+			for (data, target) in tqdm(valid_loader):
+				data, target = data.to(self.device), target.to(self.device)
+				logits, _, inf_class, exit_branch = self.model.forwardInference(data, self.threshold)
+
+				logits_list[exit_branch].append(logits), labels_list[exit_branch].append(target)
+
+		for i in range(self.n_exits):
+
+			if (len(logits_list[i]) == 0):
+				before_temperature_nll_list.append(None), after_temperature_nll_list.append(None)
+				before_ece_list.append(None), after_ece_list.append(None)
+				continue
+
+			self.temperature_branch = nn.Parameter((self.temp_init*torch.ones(1)*self.temp_init).to(self.device))
+			optimizer = optim.LBFGS([self.temperature_branch], lr=self.lr, max_iter=self.max_iter)
+
+			logit_branch = torch.cat(logits_list[i]).to(self.device)
+			label_branch = torch.cat(labels_list[i]).to(self.device)
+
+			before_temp_nll = nll_criterion(logit_branch, label_branch).item()
+			self.before_temp_nll_list.append(before_temp_nll)
+
+			before_ece = ece(logit_branch, label_branch).item()
+			self.before_ece_list.append(before_ece)
+
+			def eval():
+				optimizer.zero_grad()
+				loss = nll_criterion(self.temperature_scale_branches(logit_branch), label_branch)
+				loss.backward()
+				return loss
+
+			optimizer.step(eval)
+
+			after_temp_nll = nll_criterion(self.temperature_scale_branches(logit_branch), label_branch).item()
+			self.after_temp_nll_list.append(after_temp_nll)
+
+			after_ece = ece(self.temperature_scale_branches(logit_branch), label_branch).item()
+			self.after_ece_list.append(after_ece)
+
+			self.temperature_branches[i] = self.temperature_branch
+
+			#print("Branch: %s, Before NLL: %s, After NLL: %s"%(i+1, before_temperature_nll, after_temperature_nll))
+			#print("Branch: %s, Before ECE: %s, After ECE: %s"%(i+1, before_ece, after_ece))
+			#print("Temp Branch %s: %s"%(i+1, self.temperature_branch.item()))
+
+		self.temperature_branches = [temp_branch.item() for temp_branch in self.temperature_branches]
+
+
+		# This saves the parameter to save the temperature parameter for each side branch
+		#self.save_temperature(p_tar, before_temp_nll_list, before_ece_list, after_temp_nll_list, after_ece_list)
 		return self
 
